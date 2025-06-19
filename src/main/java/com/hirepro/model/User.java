@@ -1,3 +1,4 @@
+// src/main/java/com/hirepro/model/User.java
 package com.hirepro.model;
 
 import com.hirepro.model.enums.Role;
@@ -11,9 +12,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "email")
-})
+@Table(name = "users")
 @Getter
 @Setter
 public class User {
@@ -24,7 +23,7 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
@@ -34,7 +33,7 @@ public class User {
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    private UserStatus status = UserStatus.ACTIVE;
+    private UserStatus status = UserStatus.ACTIVE; // Default status
 
     @CreationTimestamp
     private LocalDateTime createdAt;

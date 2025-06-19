@@ -5,7 +5,8 @@ public enum Role {
     ADMIN("ROLE_ADMIN"),
     RECRUITER("ROLE_RECRUITER"),
     CANDIDATE("ROLE_CANDIDATE"),
-    INTERVIEWER("ROLE_INTERVIEWER");
+    INTERVIEWER("ROLE_INTERVIEWER"),
+    USER("ROLE_USER");  // <-- Added USER role
 
     private final String authority;
 
@@ -17,6 +18,5 @@ public enum Role {
         return authority;
     }
 
-    // The name() method is automatically provided by all enums in Java
-    // This is what's being called when you do user.getRole().name()
+    // name() method is inherited from Enum and returns the enum constant name
 }

@@ -6,5 +6,6 @@ public enum UserStatus {
     INACTIVE,       // User cannot access the system
     SUSPENDED,      // Temporary suspension
     PENDING,        // Waiting for approval
-    DELETED         // Soft-deleted user
+    DELETED,         // Soft-deleted user
+    LOCKED
 }

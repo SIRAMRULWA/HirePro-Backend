@@ -1,4 +1,3 @@
-// src/main/java/com/hirepro/dto/response/user/UserResponse.java
 package com.hirepro.dto.response.user;
 
 import com.hirepro.model.enums.Role;

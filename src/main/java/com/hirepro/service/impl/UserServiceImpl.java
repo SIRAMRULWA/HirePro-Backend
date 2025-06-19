@@ -1,19 +1,22 @@
 package com.hirepro.service.impl;
 
+import com.hirepro.dto.request.auth.RegisterRequest;
 import com.hirepro.dto.response.ApiResponse;
 import com.hirepro.dto.response.user.UserResponse;
 import com.hirepro.exception.ResourceNotFoundException;
 import com.hirepro.model.User;
+import com.hirepro.model.enums.Role;
 import com.hirepro.model.enums.UserStatus;
 import com.hirepro.repository.UserRepository;
 import com.hirepro.security.SecurityUtils;
 import com.hirepro.service.AuditLogService;
 import com.hirepro.service.UserService;
 import com.hirepro.util.PaginationUtil;
-import com.hirepro.util.mapper.UserMapper;
+import com.hirepro.dto.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,6 +30,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private AuditLogService auditLogService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;  // For encoding user passwords
 
     @Override
     public Page<UserResponse> getAllUsers(String search, String status, int page, int size, String[] sort) {
@@ -71,6 +77,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    @Override
     public ApiResponse deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
@@ -86,5 +97,48 @@ public class UserServiceImpl implements UserService {
         );
 
         return new ApiResponse(true, "User deleted successfully");
+    }
+
+    // Register new user
+    @Override
+    public ApiResponse registerUser(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            return new ApiResponse(false, "Email is already in use");
+        }
+
+        User user = new User();
+        user.setName(registerRequest.getName());
+        user.setEmail(registerRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setRole(Role.USER); // default role
+        user.setStatus(UserStatus.ACTIVE); // default status
+
+        userRepository.save(user);
+
+        auditLogService.logAction(
+                "REGISTER",
+                "USER",
+                user.getId().toString(),
+                "SYSTEM",  // Changed from null to "SYSTEM" to avoid DB error
+                "New user registered"
+        );
+
+        return new ApiResponse(true, "User registered successfully");
+    }
+
+    // Authenticate user and return role name if success, else throw exception
+    public String authenticate(String email, String password) throws Exception {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new Exception("Invalid email or password"));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new Exception("Invalid email or password");
+        }
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new Exception("User is not active");
+        }
+
+        return user.getRole().name();
     }
 }

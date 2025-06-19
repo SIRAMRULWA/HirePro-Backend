@@ -26,7 +26,7 @@ public class AuditLog {
     @Column(nullable = false)
     private String entityId;
 
-    @Column(nullable = false)
+    @Column(nullable = true) // Changed from false to true, to allow null values
     private String performedBy;
 
     @Column(columnDefinition = "TEXT")
