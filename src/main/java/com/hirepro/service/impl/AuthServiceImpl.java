@@ -10,9 +10,6 @@ import com.hirepro.repository.UserRepository;
 import com.hirepro.service.AuthService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,30 +20,24 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
 
     @Override
     public String authenticate(LoginRequest loginRequest) throws Exception {
-        try {
-            // Use Spring Security's authentication manager
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getEmail(),
-                            loginRequest.getPassword()
-                    )
-            );
+        // Manual authentication without AuthenticationManager
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new Exception("Invalid email or password"));
 
-            User user = userRepository.findByEmail(loginRequest.getEmail())
-                    .orElseThrow(() -> new Exception("User not found"));
-
-            if (!user.getStatus().equals(UserStatus.ACTIVE)) {
-                throw new Exception("User is not active");
-            }
-
-            return user.getRole().name();
-        } catch (AuthenticationException e) {
+        // Check password
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new Exception("Invalid email or password");
         }
+
+        // Check user status
+        if (!user.getStatus().equals(UserStatus.ACTIVE)) {
+            throw new Exception("User account is not active");
+        }
+
+        return user.getRole().name();
     }
 
     @Override
