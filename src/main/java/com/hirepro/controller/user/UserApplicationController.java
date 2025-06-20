@@ -27,7 +27,7 @@ public class UserApplicationController {
     @PostMapping
     public ResponseEntity<ApplicationResponse> createApplication(@Valid @RequestBody CreateApplicationRequest request,
                                                                  Authentication authentication) {
-        String userId = authentication.getName(); // assuming username = userId
+        String userId = authentication.getName();
         return ResponseEntity.ok(applicationService.createApplication(request, userId));
     }
 

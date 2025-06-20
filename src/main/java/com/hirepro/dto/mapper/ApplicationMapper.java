@@ -27,7 +27,5 @@ public interface ApplicationMapper {
             return null;
         }
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-        // For consistent timezone handling, consider using:
-        // return LocalDateTime.ofInstant(instant, ZoneId.of("UTC"));
     }
 }

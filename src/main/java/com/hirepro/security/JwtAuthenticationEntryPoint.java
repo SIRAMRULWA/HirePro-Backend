@@ -1,20 +1,38 @@
 package com.hirepro.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+@Slf4j
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
-    public void commence(HttpServletRequest request,
-                         HttpServletResponse response,
-                         AuthenticationException authException) throws IOException {
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+    public void commence(HttpServletRequest httpServletRequest,
+                         HttpServletResponse httpServletResponse,
+                         AuthenticationException e) throws IOException {
+
+        log.error("Responding with unauthorized error. Message - {}", e.getMessage());
+
+        httpServletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", false);
+        body.put("message", "Unauthorized - Invalid or missing JWT token");
+        body.put("error", e.getMessage());
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(httpServletResponse.getOutputStream(), body);
     }
 }
