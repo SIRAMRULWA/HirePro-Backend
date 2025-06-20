@@ -23,7 +23,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String authenticate(LoginRequest loginRequest) throws Exception {
-        // Manual authentication without AuthenticationManager
+        // Manual authentication
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new Exception("Invalid email or password"));
 
@@ -37,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
             throw new Exception("User account is not active");
         }
 
-        return user.getRole().name();
+        return user.getRole().name(); // Return actual role
     }
 
     @Override
@@ -46,12 +46,12 @@ public class AuthServiceImpl implements AuthService {
             throw new Exception("Email is already registered");
         }
 
-        // Create user using regular constructor/setter approach
+        // Create new user with provided role
         User newUser = new User();
         newUser.setName(registerRequest.getName());
         newUser.setEmail(registerRequest.getEmail());
         newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        newUser.setRole(Role.USER);
+        newUser.setRole(registerRequest.getRole()); // ✅ USE provided role
         newUser.setStatus(UserStatus.ACTIVE);
 
         userRepository.save(newUser);
