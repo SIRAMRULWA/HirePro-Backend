@@ -4,5 +4,8 @@ public enum JobStatus {
     ARCHIVED,
     CLOSED,
     DRAFT,
-    OPEN
+    INTERVIEW_SCHEDULED,
+    OPEN,
+    ACTIVE,
+    INACTIVE
 }

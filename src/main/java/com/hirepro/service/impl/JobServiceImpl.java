@@ -4,24 +4,30 @@ package com.hirepro.service.impl;
 import com.hirepro.dto.request.job.CreateJobRequest;
 import com.hirepro.dto.request.job.UpdateJobRequest;
 import com.hirepro.dto.response.ApiResponse;
+import com.hirepro.dto.response.application.ApplicationResponse;
 import com.hirepro.dto.response.job.JobResponse;
 import com.hirepro.exception.ResourceNotFoundException;
+import com.hirepro.model.Application;
 import com.hirepro.model.Job;
+import com.hirepro.model.enums.ApplicationStatus;
 import com.hirepro.model.enums.JobStatus;
+import com.hirepro.repository.ApplicationRepository;
 import com.hirepro.repository.JobRepository;
 import com.hirepro.security.SecurityUtils;
 import com.hirepro.service.AuditLogService;
 import com.hirepro.service.JobService;
 import com.hirepro.util.PaginationUtil;
+import com.hirepro.dto.mapper.ApplicationMapper;
 import com.hirepro.util.mapper.JobMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.ZoneId;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -30,7 +36,13 @@ public class JobServiceImpl implements JobService {
     private JobRepository jobRepository;
 
     @Autowired
+    private ApplicationRepository applicationRepository;
+
+    @Autowired
     private JobMapper jobMapper;
+
+    @Autowired
+    private ApplicationMapper applicationMapper;
 
     @Autowired
     private AuditLogService auditLogService;
@@ -143,5 +155,46 @@ public class JobServiceImpl implements JobService {
         );
 
         return jobMapper.toJobResponse(updatedJob);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse applyForJob(String jobId, String userId) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job", "id", jobId));
+
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            return new ApiResponse(false, "Cannot apply for an inactive job");
+        }
+
+        if (applicationRepository.existsByJobIdAndUserId(jobId, userId)) {
+            return new ApiResponse(false, "You have already applied for this job");
+        }
+
+        Application application = new Application();
+        application.setJobId(jobId);
+        application.setUserId(userId);
+        application.setStatus(ApplicationStatus.PENDING);
+        application.setAppliedAt(Instant.now());
+
+        applicationRepository.save(application);
+
+        auditLogService.logAction(
+                "APPLY",
+                "JOB",
+                jobId,
+                userId,
+                "Applied for job: " + job.getTitle()
+        );
+
+        return new ApiResponse(true, "Successfully applied for the job");
+    }
+
+    @Override
+    public Page<ApplicationResponse> getUserApplications(String userId, int page, int size) {
+        Pageable pageable = PaginationUtil.getPageable(page, size, new String[]{"appliedAt,desc"});
+        Page<Application> applications = applicationRepository.findByUserId(userId, pageable);
+
+        return applications.map(applicationMapper::toApplicationResponse);
     }
 }

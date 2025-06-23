@@ -35,15 +35,14 @@ public class UserPrincipal implements UserDetails {
     }
 
     public static UserPrincipal create(User user) {
-        // Convert your Role enum to GrantedAuthority
-        GrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().name());
+        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
 
         return new UserPrincipal(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
                 user.getPassword(),
-                Collections.singletonList(authority), // Single role per user
+                Collections.singletonList(authority),
                 user.getStatus()
         );
     }

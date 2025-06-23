@@ -1,6 +1,7 @@
 package com.hirepro.service.impl;
 
 import com.hirepro.dto.request.auth.RegisterRequest;
+import com.hirepro.dto.request.profile.UpdateProfileRequest;
 import com.hirepro.dto.response.ApiResponse;
 import com.hirepro.dto.response.user.UserResponse;
 import com.hirepro.exception.ResourceNotFoundException;
@@ -99,7 +100,6 @@ public class UserServiceImpl implements UserService {
         return new ApiResponse(true, "User deleted successfully");
     }
 
-    // Register new user
     @Override
     public ApiResponse registerUser(RegisterRequest registerRequest) {
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
@@ -126,7 +126,7 @@ public class UserServiceImpl implements UserService {
         return new ApiResponse(true, "User registered successfully");
     }
 
-    // Authenticate user and return role name if success, else throw exception
+    @Override
     public String authenticate(String email, String password) throws Exception {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new Exception("Invalid email or password"));
@@ -140,5 +140,40 @@ public class UserServiceImpl implements UserService {
         }
 
         return user.getRole().name();
+    }
+
+    @Override
+    public UserResponse updateUserProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        // Update user details from the request
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+
+        // Update phone if it exists in the request
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+
+        // Save the updated user
+        User updatedUser = userRepository.save(user);
+
+        // Log the action
+        auditLogService.logAction(
+                "PROFILE_UPDATE",
+                "USER",
+                userId.toString(),
+                SecurityUtils.getCurrentUserId(),
+                "User profile updated"
+        );
+
+        return userMapper.toUserResponse(updatedUser);
+    }
+
+    @Override
+    public ApiResponse changePassword(Long userId, String currentPassword, String newPassword) {
+        // TODO: Implement password change functionality
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }
